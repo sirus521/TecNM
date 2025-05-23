@@ -1,0 +1,12 @@
+/* Estilos básicos para el contenedor */
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        /* Estilo del canvas donde dibujamos */
+        #canvas {
+            border: 1px solid #000;
+            background-color: #f0f0f0;
+        }

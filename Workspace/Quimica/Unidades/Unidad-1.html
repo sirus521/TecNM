@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/Quimica/Quimica.css">
+    <title>Unidad 1 - Diagrama Orbital</title>
+</head>
+<body>
+    <!-- Lienzo para partículas -->
+    <canvas id="particles"></canvas>
+
+    <div class="main-container">
+        <div class="glass-window">
+            <h1>Configurador de Orbitales Atómicos</h1>
+            
+            <div class="input-group">
+                <input type="text" id="elemento" placeholder="Ingrese símbolo o número atómico">
+                <button onclick="calcular()">Calcular</button>
+                <button onclick="resetear()">Reset</button>
+            </div>
+
+            <div id="resultados" class="resultado"></div>
+        </div>
+    </div>
+
+    <script src="/Quimica/Unidades/Quimica.js"></script>
+    <script src="/Quimica/Unidades/Particles.js"></script>
+</body>
+</html>

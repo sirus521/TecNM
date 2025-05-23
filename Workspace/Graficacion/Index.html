@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotador de Figuras Geométricas</title>
+    <style>
+        /* Fondo con gradiente animado */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: auto;
+            background: linear-gradient(315deg, rgb(0, 132, 255) 3%, rgb(219, 208, 213) 38%, rgb(243, 117, 191) 68%, rgb(245, 77, 77) 98%);
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+            background-attachment: fixed;
+            margin: 0;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 100%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+
+        /* Contenedor principal */
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Estilo del canvas */
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 1px solid #000;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Controles con glassmorfismo */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Botones */
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            background: linear-gradient(315deg, rgb(156, 4, 131) 3%, rgb(4, 142, 206) 68%);
+            border: none;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        /* Inputs */
+        input {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #000;
+        }
+
+        /* Contenedor de figuras predefinidas */
+        .figures-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Lienzo -->
+        <canvas id="canvas" width="500" height="500"></canvas>
+
+        <!-- Controles -->
+        <div class="controls">
+            <div class="input-group">
+                <input type="number" id="x" placeholder="X">
+                <input type="number" id="y" placeholder="Y">
+                <button onclick="addPoint()">Agregar punto</button>
+            </div>
+            <div class="input-group">
+                <input type="number" id="angle" placeholder="Ángulo">
+                <button onclick="rotateFigure()">Rotar</button>
+            </div>
+            <h4>Figuras predefinidas:</h4>
+            <div class="figures-container" id="predefinedFigures"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let points = [];
+        const center = { x: canvas.width / 2, y: canvas.height / 2 };
+        const scale = 50 // Escala ajustada para coordenadas más pequeñas
+
+// Figuras predefinidas
+const predefinedFigures = [
+            { name: 'Triángulo', points: [{x:0,y:0}, {x:1,y:2}, {x:-1,y:2}] },
+            { name: 'Cuadrado', points: [{x:-1,y:-1}, {x:1,y:-1}, {x:1,y:1}, {x:-1,y:1}] },
+            { name: 'Rectángulo', points: [{x:-2,y:-1}, {x:2,y:-1}, {x:2,y:1}, {x:-2,y:1}] },
+            { name: 'Pentágono', points: Array.from({length:5}, (_,i) => ({
+                x: Math.cos((i*72 - 90)*Math.PI/180),
+                y: Math.sin((i*72 - 90)*Math.PI/180)
+            })) },
+            { name: 'Hexágono', points: Array.from({length:6}, (_,i) => ({
+                x: Math.cos((i*60 - 90)*Math.PI/180),
+                y: Math.sin((i*60 - 90)*Math.PI/180)
+            })) },
+            { name: 'Estrella 5', points: [
+                {x:0,y:-2}, {x:0.5,y:-0.5}, {x:2,y:-0.5}, {x:1,y:0.5},
+                {x:1.5,y:2}, {x:0,y:1}, {x:-1.5,y:2}, {x:-1,y:0.5},
+                {x:-2,y:-0.5}, {x:-0.5,y:-0.5}
+            ] },
+            { name: 'Flecha', points: [
+                {x:-2,y:0}, {x:0,y:-2}, {x:2,y:0}, {x:0,y:2}, {x:-2,y:0},
+                {x:0,y:1}, {x:3,y:0}, {x:0,y:-1}
+            ] },
+            { name: 'Cruz', points: [
+                {x:-1,y:-1}, {x:1,y:-1}, {x:1,y:-0.3}, {x:0.3,y:-0.3},
+                {x:0.3,y:1}, {x:-0.3,y:1}, {x:-0.3,y:-0.3}, {x:-1,y:-0.3}
+            ] },
+            { name: 'Rombo', points: [{x:0,y:-2}, {x:2,y:0}, {x:0,y:2}, {x:-2,y:0}] },
+            { name: 'Trapecio', points: [{x:-2,y:-1}, {x:2,y:-1}, {x:1,y:1}, {x:-1,y:1}] },
+            { name: 'Casa', points: [
+                {x:-2,y:-1}, {x:2,y:-1}, {x:2,y:1}, {x:0,y:3}, {x:-2,y:1}
+            ] },
+            { name: 'Corazón', points: [
+                {x:0,y:-1}, {x:1,y:-2}, {x:2,y:-1}, {x:2,y:1}, {x:0,y:3}, 
+                {x:-2,y:1}, {x:-2,y:-1}, {x:-1,y:-2}
+            ] },
+            { name: 'Círculo', points: Array.from({length:36}, (_,i) => ({
+                x: Math.cos(i*10 * Math.PI/180),
+                y: Math.sin(i*10 * Math.PI/180)
+            })) },
+            { name: 'Espiral', points: Array.from({length:72}, (_,i) => ({
+                x: (i/10) * Math.cos(i*10 * Math.PI/180),
+                y: (i/10) * Math.sin(i*10 * Math.PI/180)
+            })) },
+            { name: 'Luna', points: [
+                {x:0,y:-2}, {x:2,y:0}, {x:0,y:2}, {x:-1,y:1}, {x:-2,y:0}, {x:-1,y:-1}
+            ] },
+            { name: 'Rayos', points: Array.from({length:8}, (_,i) => ({
+                x: (i%2 ? 3 : 1) * Math.cos((i*45) * Math.PI/180),
+                y: (i%2 ? 3 : 1) * Math.sin((i*45) * Math.PI/180)
+            })) },
+            { name: 'Flor', points: Array.from({length:24}, (_,i) => ({
+                x: (i%2 ? 1.5 : 3) * Math.cos(i*15 * Math.PI/180),
+                y: (i%2 ? 1.5 : 3) * Math.sin(i*15 * Math.PI/180)
+            })) },
+            { name: 'Nube', points: [
+                {x:-3,y:0}, {x:-2,y:1}, {x:0,y:2}, {x:2,y:1}, {x:3,y:0},
+                {x:2,y:-1}, {x:0,y:-2}, {x:-2,y:-1}
+            ] },
+            { name: 'Abstracto 1', points: [
+                {x:-3,y:-1}, {x:-1,y:-3}, {x:1,y:-2}, {x:3,y:-1},
+                {x:2,y:1}, {x:0,y:3}, {x:-2,y:2}
+            ] },
+            { name: 'Letra X', points: [
+                {x:-2,y:-2}, {x:-1,y:-1}, {x:0,y:0}, {x:1,y:1}, {x:2,y:2},
+                {x:2,y:-2}, {x:1,y:-1}, {x:0,y:0}, {x:-1,y:1}, {x:-2,y:2}
+            ] }
+        ];
+
+        function createFigureButtons() {
+            const container = document.getElementById('predefinedFigures');
+            predefinedFigures.forEach(fig => {
+                const button = document.createElement('button');
+                button.textContent = fig.name;
+                button.onclick = () => {
+                    points = structuredClone(fig.points);
+                    drawFigure();
+                };
+                container.appendChild(button);
+            });
+        }
+
+        // Crear la cuadrícula y los ejes
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#000';
+
+            // Cuadrícula
+            for (let x = center.x % scale; x < canvas.width; x += scale) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+                const coordX = Math.round((x - center.x) / scale);
+                if (coordX !== 0) ctx.fillText(coordX, x + 2, center.y - 2);
+            }
+            for (let y = center.y % scale; y < canvas.height; y += scale) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+                const coordY = Math.round((center.y - y) / scale);
+                if (coordY !== 0) ctx.fillText(coordY, center.x + 2, y - 2);
+            }
+
+            // Ejes
+            ctx.strokeStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(center.x, 0);
+            ctx.lineTo(center.x, canvas.height);
+            ctx.moveTo(0, center.y);
+            ctx.lineTo(canvas.width, center.y);
+            ctx.stroke();
+        }
+
+        // Dibujar la figura
+        function drawFigure() {
+            drawGrid();
+            if (points.length === 0) return;
+
+            ctx.strokeStyle = '#B026FF';
+            ctx.beginPath();
+
+            const startX = center.x + points[0].x * scale;
+            const startY = center.y - points[0].y * scale;
+            ctx.moveTo(startX, startY);
+
+            points.forEach(point => {
+                const x = center.x + point.x * scale;
+                const y = center.y - point.y * scale;
+                ctx.lineTo(x, y);
+            });
+
+            ctx.closePath();
+            ctx.stroke();
+
+            // Dibujar puntos
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(center.x + point.x * scale, center.y - point.y * scale, 3, 0, Math.PI * 2);
+                ctx.fillStyle = '#CCFF00';
+                ctx.fill();
+            });
+        }
+
+        // Rotar un punto alrededor del origen en x,y,z
+        function rotatePoint(point, angle) {
+            const radians = angle * Math.PI / 180;
+            const rotationMatrix = [
+            [Math.cos(radians), -Math.sin(radians), 0],
+            [Math.sin(radians), Math.cos(radians), 0],
+            [0, 0, 1]
+            ];
+            const vector = [point.x, point.y, 1];
+            const result = multiplyMatrix(rotationMatrix, vector);
+            return { x: result[0], y: result[1] };
+        }
+
+        // Multiplicación de matriz por vector
+        function multiplyMatrix(matrix, vector) {
+            return matrix.map(row => row.reduce((sum, value, index) => sum + value * vector[index], 0));
+        }
+
+        // Agregar un punto a la figura
+        function addPoint() {
+            const x = parseFloat(document.getElementById('x').value);
+            const y = parseFloat(document.getElementById('y').value);
+            if (!isNaN(x) && !isNaN(y)) {
+                points.push({ x, y });
+                drawFigure();
+            }
+        }
+
+        // Rotar la figura
+        function rotateFigure() {
+            const angle = parseFloat(document.getElementById('angle').value);
+            if (!isNaN(angle)) {
+                points = points.map(point => rotatePoint(point, angle));
+                drawFigure();
+            }
+        }
+
+        // Crear botones para figuras predefinidas
+        function createFigureButtons() {
+            const container = document.getElementById('predefinedFigures');
+            predefinedFigures.forEach(fig => {
+                const button = document.createElement('button');
+                button.textContent = fig.name;
+                button.onclick = () => {
+                    points = structuredClone(fig.points);
+                    drawFigure();
+                };
+                container.appendChild(button);
+            });
+        }
+
+
+        function init() {
+            drawGrid();
+            createFigureButtons();
+        }
+
+        init();
+    </script>
+</body>
+</html>
